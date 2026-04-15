@@ -46,7 +46,7 @@ function repairMalformedSchema(db: Database): void {
     }
 
     logger.warn('DB', 'Detected malformed database schema, attempting repair', { error: message });
-
+ 
     // Extract the problematic object name from the error message
     // Format: "malformed database schema (object_name) - details"
     const match = message.match(/malformed database schema \(([^)]+)\)/);

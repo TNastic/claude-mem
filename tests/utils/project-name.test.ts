@@ -7,13 +7,14 @@
 
 import { describe, it, expect } from 'bun:test';
 import { homedir } from 'os';
-import { getProjectName, getProjectContext } from '../../src/utils/project-name.js';
+import path from 'path';
+import { getProjectName, getProjectContext, getProjectMemoryKey, getProjectMemoryContext } from '../../src/utils/project-name.js';
 
 describe('getProjectName', () => {
   describe('tilde expansion', () => {
     it('resolves bare ~ to home directory basename', () => {
       const home = homedir();
-      const expected = home.split('/').pop() || home.split('\\').pop() || '';
+      const expected = path.basename(home);
       expect(getProjectName('~')).toBe(expected);
     });
 
@@ -23,7 +24,7 @@ describe('getProjectName', () => {
 
     it('resolves ~/ to home directory basename', () => {
       const home = homedir();
-      const expected = home.split('/').pop() || home.split('\\').pop() || '';
+      const expected = path.basename(home);
       expect(getProjectName('~/')).toBe(expected);
     });
   });
@@ -72,6 +73,42 @@ describe('getProjectName', () => {
         getProjectName(`${home}/projects/app`)
       );
     });
+  });
+});
+
+describe('getProjectMemoryKey', () => {
+  it('keeps the readable project basename as a prefix', () => {
+    expect(getProjectMemoryKey('/home/user/my-project')).toMatch(/^my-project#[a-f0-9]{12}$/);
+  });
+
+  it('returns a stable key for the same path', () => {
+    const path = '/home/user/my-project';
+    expect(getProjectMemoryKey(path)).toBe(getProjectMemoryKey(path));
+  });
+
+  it('separates projects with the same basename in different directories', () => {
+    const first = getProjectMemoryKey('/home/user/work/api');
+    const second = getProjectMemoryKey('/home/user/experiments/api');
+
+    expect(first).toMatch(/^api#[a-f0-9]{12}$/);
+    expect(second).toMatch(/^api#[a-f0-9]{12}$/);
+    expect(first).not.toBe(second);
+  });
+
+  it('keeps fallback behavior for missing cwd', () => {
+    expect(getProjectMemoryKey(null)).toBe('unknown-project');
+    expect(getProjectMemoryKey('')).toBe('unknown-project');
+  });
+});
+
+describe('getProjectMemoryContext', () => {
+  it('returns memory keys for normal project lookups', () => {
+    const ctx = getProjectMemoryContext('/home/user/my-project');
+
+    expect(ctx.primary).toBe(getProjectMemoryKey('/home/user/my-project'));
+    expect(ctx.parent).toBeNull();
+    expect(ctx.isWorktree).toBe(false);
+    expect(ctx.allProjects).toEqual([ctx.primary]);
   });
 });
 

@@ -14,7 +14,7 @@ import path from 'path';
 import { isProjectExcluded } from '../../utils/project-filter.js';
 import { SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
 import { USER_SETTINGS_PATH } from '../../shared/paths.js';
-import { getProjectContext } from '../../utils/project-name.js';
+import { getProjectMemoryContext } from '../../utils/project-name.js';
 
 /** Skip the gate for files smaller than this — timeline overhead exceeds file read cost. */
 const FILE_READ_GATE_MIN_BYTES = 1_500;
@@ -200,7 +200,7 @@ export const fileContextHandler: EventHandler = {
 
     // Query worker for observations related to this file
     try {
-      const context = getProjectContext(input.cwd);
+      const context = getProjectMemoryContext(input.cwd);
       // Observations store relative paths — convert absolute to relative using cwd
       const cwd = input.cwd || process.cwd();
       const absolutePath = path.isAbsolute(filePath) ? filePath : path.resolve(cwd, filePath);

@@ -1,7 +1,10 @@
 import { homedir } from 'os'
 import path from 'path';
+import { createHash } from 'crypto';
 import { logger } from './logger.js';
 import { detectWorktree } from './worktree.js';
+
+const PROJECT_KEY_HASH_LENGTH = 12;
 
 /**
  * Expand leading ~ to the user's home directory.
@@ -12,6 +15,20 @@ function expandTilde(p: string): string {
     return p.replace(/^~/, homedir())
   }
   return p
+}
+
+function normalizeProjectPath(cwd: string): string {
+  const expanded = expandTilde(cwd);
+  const resolved = path.resolve(expanded);
+  const normalized = resolved.replace(/[\\/]+/g, '/');
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
+}
+
+function shortHash(value: string): string {
+  return createHash('sha256')
+    .update(value)
+    .digest('hex')
+    .slice(0, PROJECT_KEY_HASH_LENGTH);
 }
 
 /**
@@ -55,6 +72,19 @@ export function getProjectName(cwd: string | null | undefined): string {
 }
 
 /**
+ * Build the storage key used to isolate memories by concrete project path.
+ */
+export function getProjectMemoryKey(cwd: string | null | undefined): string {
+  const projectName = getProjectName(cwd);
+  if (!cwd || cwd.trim() === '' || projectName === 'unknown-project') {
+    return projectName;
+  }
+
+  const normalizedPath = normalizeProjectPath(cwd);
+  return `${projectName}#${shortHash(normalizedPath)}`;
+}
+
+/**
  * Project context with worktree awareness
  */
 export interface ProjectContext {
@@ -94,6 +124,32 @@ export function getProjectContext(cwd: string | null | undefined): ProjectContex
       parent: worktreeInfo.parentProjectName,
       isWorktree: true,
       allProjects: [worktreeInfo.parentProjectName, primary]
+    };
+  }
+
+  return { primary, parent: null, isWorktree: false, allProjects: [primary] };
+}
+
+/**
+ * Project context for persisted memory reads and writes.
+ */
+export function getProjectMemoryContext(cwd: string | null | undefined): ProjectContext {
+  const primary = getProjectMemoryKey(cwd);
+
+  if (!cwd) {
+    return { primary, parent: null, isWorktree: false, allProjects: [primary] };
+  }
+
+  const expandedCwd = expandTilde(cwd);
+  const worktreeInfo = detectWorktree(expandedCwd);
+
+  if (worktreeInfo.isWorktree && worktreeInfo.parentRepoPath) {
+    const parent = getProjectMemoryKey(worktreeInfo.parentRepoPath);
+    return {
+      primary,
+      parent,
+      isWorktree: true,
+      allProjects: [parent, primary]
     };
   }
 

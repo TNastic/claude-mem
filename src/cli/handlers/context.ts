@@ -7,7 +7,7 @@
 
 import type { EventHandler, NormalizedHookInput, HookResult } from '../types.js';
 import { ensureWorkerRunning, getWorkerPort, workerHttpRequest } from '../../shared/worker-utils.js';
-import { getProjectContext } from '../../utils/project-name.js';
+import { getProjectMemoryContext } from '../../utils/project-name.js';
 import { HOOK_EXIT_CODES } from '../../shared/hook-constants.js';
 import { logger } from '../../utils/logger.js';
 import { SettingsDefaultsManager } from '../../shared/SettingsDefaultsManager.js';
@@ -30,7 +30,7 @@ export const contextHandler: EventHandler = {
     }
 
     const cwd = input.cwd ?? process.cwd();
-    const context = getProjectContext(cwd);
+    const context = getProjectMemoryContext(cwd);
     const port = getWorkerPort();
     const platformSource = normalizePlatformSource(input.platform);
 

@@ -4,7 +4,7 @@ import { fileEditHandler } from '../../cli/handlers/file-edit.js';
 import { sessionCompleteHandler } from '../../cli/handlers/session-complete.js';
 import { ensureWorkerRunning, workerHttpRequest } from '../../shared/worker-utils.js';
 import { logger } from '../../utils/logger.js';
-import { getProjectContext, getProjectName } from '../../utils/project-name.js';
+import { getProjectMemoryContext, getProjectMemoryKey } from '../../utils/project-name.js';
 import { writeAgentsMd } from '../../utils/agents-md-utils.js';
 import { resolveFieldSpec, resolveFields, matchesRule } from './field-utils.js';
 import { expandHomePath } from './config.js';
@@ -104,7 +104,7 @@ export class TranscriptEventProcessor {
     const resolved = resolveFieldSpec(fieldSpec, entry, ctx);
     if (typeof resolved === 'string' && resolved.trim()) return resolved;
     if (watch.project) return watch.project;
-    if (session.cwd) return getProjectName(session.cwd);
+    if (session.cwd) return getProjectMemoryKey(session.cwd);
     return session.project;
   }
 
@@ -349,7 +349,7 @@ export class TranscriptEventProcessor {
     const cwd = session.cwd ?? watch.workspace;
     if (!cwd) return;
 
-    const context = getProjectContext(cwd);
+    const context = getProjectMemoryContext(cwd);
     const projectsParam = context.allProjects.join(',');
 
     try {
