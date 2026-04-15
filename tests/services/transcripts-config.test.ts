@@ -10,3 +10,10 @@ describe('transcript watch sample config', () => {
     expect(codexWatch?.context?.path).toBeUndefined();
   });
 });
+  it('recognizes current Codex task_complete as session end', () => {
+    const codexSchema = SAMPLE_CONFIG.schemas?.codex;
+    const sessionEnd = codexSchema?.events.find((event) => event.name === 'session-end');
+
+    expect(sessionEnd?.match.path).toBe('payload.type');
+    expect(sessionEnd?.match.in).toContain('task_complete');
+  });

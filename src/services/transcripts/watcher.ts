@@ -12,6 +12,10 @@ interface TailState {
   partial: string;
 }
 
+export function normalizeGlobPath(inputPath: string): string {
+  return inputPath.replace(/\\/g, '/');
+}
+
 class FileTailer {
   private watcher: ReturnType<typeof fsWatch> | null = null;
   private tailState: TailState;
@@ -121,7 +125,7 @@ export class TranscriptWatcher {
     }
 
     const rescanIntervalMs = watch.rescanIntervalMs ?? 5000;
-      const timer = setInterval(async () => {
+    const timer = setInterval(async () => {
       const newFiles = this.resolveWatchFiles(resolvedPath);
       for (const filePath of newFiles) {
         if (!this.tailers.has(filePath)) {
@@ -141,7 +145,7 @@ export class TranscriptWatcher {
 
   private resolveWatchFiles(inputPath: string): string[] {
     if (this.hasGlob(inputPath)) {
-      return globSync(inputPath, { nodir: true, absolute: true });
+      return globSync(normalizeGlobPath(inputPath), { nodir: true, absolute: true });
     }
 
     if (existsSync(inputPath)) {
@@ -149,7 +153,7 @@ export class TranscriptWatcher {
         const stat = statSync(inputPath);
         if (stat.isDirectory()) {
           const pattern = join(inputPath, '**', '*.jsonl');
-          return globSync(pattern, { nodir: true, absolute: true });
+          return globSync(normalizeGlobPath(pattern), { nodir: true, absolute: true });
         }
         return [inputPath];
       } catch {

@@ -30,8 +30,8 @@ import { sanitizeEnv } from '../supervisor/env-sanitizer.js';
 import { ensureWorkerStarted as ensureWorkerStartedShared } from './worker-spawner.js';
 
 // Re-export for backward compatibility — canonical implementation in shared/plugin-state.ts
-export { isPluginDisabledInClaudeSettings } from '../shared/plugin-state.js';
-import { isPluginDisabledInClaudeSettings } from '../shared/plugin-state.js';
+export { isPluginDisabledInClaudeSettings, shouldExitForDisabledClaudePlugin } from '../shared/plugin-state.js';
+import { shouldExitForDisabledClaudePlugin } from '../shared/plugin-state.js';
 
 // Version injected at build time by esbuild define
 declare const __DEFAULT_PACKAGE_VERSION__: string;
@@ -1039,10 +1039,9 @@ export async function ensureWorkerStarted(port: number): Promise<boolean> {
 async function main() {
   const command = process.argv[2];
 
-  // Early exit if plugin is disabled in Claude Code settings (#781).
-  // Only gate hook-initiated commands; CLI management (stop/status) still works.
-  const hookInitiatedCommands = ['start', 'hook', 'restart', '--daemon'];
-  if ((hookInitiatedCommands.includes(command) || command === undefined) && isPluginDisabledInClaudeSettings()) {
+  // Claude Code's plugin toggle must only disable Claude hook execution.
+  // Worker management remains available for Codex/Cursor/Gemini transcript modes.
+  if (shouldExitForDisabledClaudePlugin(command)) {
     process.exit(0);
   }
 

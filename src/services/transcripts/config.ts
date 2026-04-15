@@ -8,7 +8,7 @@ export const DEFAULT_STATE_PATH = join(homedir(), '.claude-mem', 'transcript-wat
 
 const CODEX_SAMPLE_SCHEMA: TranscriptSchema = {
   name: 'codex',
-  version: '0.3',
+  version: '0.4',
   description: 'Schema for Codex session JSONL files under ~/.codex/sessions.',
   events: [
     {
@@ -78,7 +78,7 @@ const CODEX_SAMPLE_SCHEMA: TranscriptSchema = {
     },
     {
       name: 'session-end',
-      match: { path: 'payload.type', in: ['turn_aborted', 'turn_completed'] },
+      match: { path: 'payload.type', in: ['turn_aborted', 'turn_completed', 'task_complete'] },
       action: 'session_end'
     }
   ]

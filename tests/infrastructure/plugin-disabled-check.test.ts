@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'bun:test';
 import { mkdirSync, writeFileSync, rmSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
-import { isPluginDisabledInClaudeSettings } from '../../src/shared/plugin-state.js';
+import { isPluginDisabledInClaudeSettings, shouldExitForDisabledClaudePlugin } from '../../src/shared/plugin-state.js';
 
 /**
  * Tests for isPluginDisabledInClaudeSettings() (#781).
@@ -87,5 +87,20 @@ describe('isPluginDisabledInClaudeSettings (#781)', () => {
   it('should return false when settings.json is empty', () => {
     writeFileSync(join(tempDir, 'settings.json'), '');
     expect(isPluginDisabledInClaudeSettings()).toBe(false);
+  });
+  it('should only exit Claude hook commands when plugin is disabled', () => {
+    const settings = {
+      enabledPlugins: {
+        'claude-mem@thedotmack': false
+      }
+    };
+    writeFileSync(join(tempDir, 'settings.json'), JSON.stringify(settings));
+
+    expect(shouldExitForDisabledClaudePlugin('hook')).toBe(true);
+    expect(shouldExitForDisabledClaudePlugin('start')).toBe(false);
+    expect(shouldExitForDisabledClaudePlugin('restart')).toBe(false);
+    expect(shouldExitForDisabledClaudePlugin('--daemon')).toBe(false);
+    expect(shouldExitForDisabledClaudePlugin('status')).toBe(false);
+    expect(shouldExitForDisabledClaudePlugin(undefined)).toBe(false);
   });
 });

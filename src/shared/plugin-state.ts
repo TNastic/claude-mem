@@ -27,3 +27,6 @@ export function isPluginDisabledInClaudeSettings(): boolean {
     return false;
   }
 }
+export function shouldExitForDisabledClaudePlugin(command: string | undefined): boolean {
+  return command === 'hook' && isPluginDisabledInClaudeSettings();
+}
